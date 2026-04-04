@@ -99,7 +99,7 @@ function stopBackend() {
 function waitForBackend(port, timeoutMs = 60000) {
   return new Promise((resolve, reject) => {
     const start = Date.now();
-    const url = `http://localhost:${port}/actuator/health`;
+    const url = `http://localhost:${port}/api/version`;
 
     const check = () => {
       http.get(url, (res) => {
