@@ -1,0 +1,40 @@
+appId: com.casetta.moneto
+productName: Moneto
+
+directories:
+  output: dist
+
+# Files included in the Electron app bundle
+files:
+  - electron/**/*
+  - assets/**/*
+  - package.json
+
+# Extra resources bundled alongside the app (not in asar)
+# These are accessible at process.resourcesPath at runtime
+extraResources:
+  - from: resources/moneto.jar
+    to: moneto.jar
+  - from: resources/jre
+    to: jre
+    filter:
+      - "**/*"
+
+win:
+  target:
+    - target: nsis
+  icon: assets/icon.ico
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: false
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Moneto
+
+# Auto-update via GitHub Releases
+publish:
+  provider: github
+  owner: mcasetta
+  repo: moneto-app
+  private: true

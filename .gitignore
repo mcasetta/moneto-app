@@ -1,0 +1,6 @@
+node_modules/
+dist/
+
+# Bundled JRE and JAR (large binaries, not committed - added at build time)
+resources/jre/
+resources/moneto.jar
