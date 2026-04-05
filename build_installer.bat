@@ -1,6 +1,26 @@
 @echo off
 setlocal enabledelayedexpansion
 
+REM -----------------------------------------------------------------------
+REM Self-relaunch via PowerShell Tee-Object to save output to a log file
+REM -----------------------------------------------------------------------
+if "%~1"=="--logged" goto :build
+
+if not exist "%~dp0logs" mkdir "%~dp0logs"
+for /f %%i in ('powershell -NoProfile -Command "Get-Date -Format yyyyMMdd-HHmm"') do set TIMESTAMP=%%i
+set LOGFILE=%~dp0logs\build-%TIMESTAMP%.log
+
+powershell -NoProfile -Command "cmd /c '\"%~f0\" --logged 2>&1' | Tee-Object -FilePath '%LOGFILE%'"
+
+echo.
+echo Log salvato in: %LOGFILE%
+pause
+exit /b
+
+REM -----------------------------------------------------------------------
+:build
+REM -----------------------------------------------------------------------
+
 echo ============================================================
 echo  Moneto - Build Installer
 echo ============================================================
@@ -19,18 +39,16 @@ if not exist "%RESOURCES_DIR%\jre\bin\java.exe" (
     echo   - Version: 21, OS: Windows, Arch: x64, Package: JRE, Type: zip
     echo Decomprimi e rinomina la cartella in: %RESOURCES_DIR%\jre\
     echo.
-    pause
     exit /b 1
 )
 
-REM --- Build Spring Boot JAR ---
+REM --- Build Spring Boot JAR (with Angular frontend) ---
 echo [1/3] Build Spring Boot JAR...
 cd /d "%BACKEND_DIR%"
 set MVN="C:\Program Files\JetBrains\IntelliJ IDEA Community Edition 2025.2.6.1\plugins\maven\lib\maven3\bin\mvn.cmd"
 call %MVN% clean package -DskipTests -P with-frontend -q
 if errorlevel 1 (
     echo [ERRORE] Build Maven fallita.
-    pause
     exit /b 1
 )
 echo       OK
@@ -44,7 +62,6 @@ for %%f in ("%BACKEND_DIR%\target\contabilita-*.jar") do (
 )
 if "!JAR_FOUND!"=="0" (
     echo [ERRORE] JAR non trovato in backend\target\
-    pause
     exit /b 1
 )
 echo       OK
@@ -57,7 +74,6 @@ set CSC_IDENTITY_AUTO_DISCOVERY=false
 call npm run build
 if errorlevel 1 (
     echo [ERRORE] Build Electron fallita.
-    pause
     exit /b 1
 )
 
@@ -66,4 +82,4 @@ echo ============================================================
 echo  Build completata!
 echo  Installer: %SCRIPT_DIR%dist\Moneto-Setup-*.exe
 echo ============================================================
-pause
+exit /b 0
