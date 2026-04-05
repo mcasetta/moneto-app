@@ -26,7 +26,8 @@ if not exist "%RESOURCES_DIR%\jre\bin\java.exe" (
 REM --- Build Spring Boot JAR ---
 echo [1/3] Build Spring Boot JAR...
 cd /d "%BACKEND_DIR%"
-call mvn clean package -DskipTests -q
+set MVN="C:\Program Files\JetBrains\IntelliJ IDEA Community Edition 2025.2.6.1\plugins\maven\lib\maven3\bin\mvn.cmd"
+call %MVN% clean package -DskipTests -q
 if errorlevel 1 (
     echo [ERRORE] Build Maven fallita.
     pause
