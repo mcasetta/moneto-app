@@ -1,6 +1,7 @@
-const { app, BrowserWindow, shell } = require('electron');
+const { app, BrowserWindow, shell, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const net = require('net');
 const { spawn } = require('child_process');
 const http = require('http');
 
@@ -56,6 +57,19 @@ function getJavaExecutable() {
 }
 
 // ---------------------------------------------------------------------------
+// Port availability check
+// ---------------------------------------------------------------------------
+
+function checkPortAvailable(port) {
+  return new Promise((resolve) => {
+    const server = net.createServer();
+    server.once('error', () => resolve(false));
+    server.once('listening', () => server.close(() => resolve(true)));
+    server.listen(port, '127.0.0.1');
+  });
+}
+
+// ---------------------------------------------------------------------------
 // Backend process
 // ---------------------------------------------------------------------------
 
@@ -96,24 +110,48 @@ function stopBackend() {
 // Health check: poll until Spring Boot is ready
 // ---------------------------------------------------------------------------
 
-function waitForBackend(port, timeoutMs = 60000) {
+function waitForBackend(port, timeoutMs = 60000, onStatus) {
   return new Promise((resolve, reject) => {
+    let settled = false;
     const start = Date.now();
     const url = `http://localhost:${port}/api/version`;
 
+    const settle = (fn, ...args) => {
+      if (!settled) {
+        settled = true;
+        if (backendProcess) backendProcess.removeListener('exit', onExit);
+        fn(...args);
+      }
+    };
+
+    // Detect if backend crashes while we are waiting
+    const onExit = (code) => {
+      settle(reject, new Error(`Il backend si è arrestato inaspettatamente (codice: ${code}).\n\nControlla il log in:\n${app.getPath('userData')}\\logs\\moneto.log`));
+    };
+    if (backendProcess) backendProcess.once('exit', onExit);
+
     const check = () => {
+      if (settled) return;
+
+      const elapsed = Math.floor((Date.now() - start) / 1000);
+      if (onStatus) {
+        if (elapsed < 5) onStatus('Avvio backend in corso...');
+        else onStatus(`Avvio backend in corso... (${elapsed}s)`);
+      }
+
       http.get(url, (res) => {
         if (res.statusCode === 200) {
-          resolve();
+          settle(resolve);
         } else {
           retry();
         }
-      }).on('error', () => retry());
+      }).on('error', retry);
     };
 
     const retry = () => {
+      if (settled) return;
       if (Date.now() - start > timeoutMs) {
-        reject(new Error('Backend did not start in time'));
+        settle(reject, new Error(`Il backend non ha risposto entro ${timeoutMs / 1000} secondi.\n\nControlla il log in:\n${app.getPath('userData')}\\logs\\moneto.log`));
       } else {
         setTimeout(check, 500);
       }
@@ -121,6 +159,45 @@ function waitForBackend(port, timeoutMs = 60000) {
 
     check();
   });
+}
+
+// ---------------------------------------------------------------------------
+// Splash screen
+// ---------------------------------------------------------------------------
+
+let splashWindow = null;
+
+function createSplashWindow() {
+  splashWindow = new BrowserWindow({
+    width: 380,
+    height: 260,
+    frame: false,
+    resizable: false,
+    center: true,
+    skipTaskbar: true,
+    icon: path.join(__dirname, '..', 'assets', 'icon.ico'),
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+    },
+  });
+
+  splashWindow.loadFile(path.join(__dirname, 'splash.html'));
+}
+
+function setSplashStatus(text) {
+  if (splashWindow && !splashWindow.isDestroyed()) {
+    splashWindow.webContents.executeJavaScript(
+      `document.getElementById('status').textContent = ${JSON.stringify(text)}`
+    ).catch(() => {});
+  }
+}
+
+function closeSplash() {
+  if (splashWindow && !splashWindow.isDestroyed()) {
+    splashWindow.close();
+    splashWindow = null;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -147,6 +224,7 @@ function createWindow(port) {
   mainWindow.loadURL(`http://localhost:${port}`);
 
   mainWindow.once('ready-to-show', () => {
+    closeSplash();
     mainWindow.show();
   });
 
@@ -180,24 +258,49 @@ app.whenReady().then(async () => {
   // Ensure logs directory exists
   fs.mkdirSync(path.join(dataDir, 'logs'), { recursive: true });
 
-  startBackend(config.port, dataDir);
-
-  // TODO: show splash screen here while waiting
-
-  try {
-    await waitForBackend(config.port);
-  } catch (e) {
-    console.error('Backend failed to start:', e.message);
+  // Pre-flight: check JAR exists
+  const jarPath = getJarPath();
+  if (!fs.existsSync(jarPath)) {
+    dialog.showErrorBox(
+      'File non trovato',
+      `Impossibile trovare il file dell'applicazione:\n${jarPath}\n\nRiinstalla Moneto.`
+    );
     app.quit();
     return;
   }
 
+  // Pre-flight: check port is available
+  const portAvailable = await checkPortAvailable(config.port);
+  if (!portAvailable) {
+    dialog.showErrorBox(
+      'Porta occupata',
+      `La porta ${config.port} è già in uso da un'altra applicazione.\n\nChiudi l'applicazione che occupa la porta, oppure modifica la configurazione:\n${CONFIG_PATH}`
+    );
+    app.quit();
+    return;
+  }
+
+  createSplashWindow();
+  setSplashStatus('Avvio backend in corso...');
+
+  startBackend(config.port, dataDir);
+
+  try {
+    await waitForBackend(config.port, 60000, setSplashStatus);
+  } catch (e) {
+    closeSplash();
+    dialog.showErrorBox('Errore di avvio', `Moneto non è riuscita ad avviarsi.\n\n${e.message}`);
+    app.quit();
+    return;
+  }
+
+  setSplashStatus('Caricamento interfaccia...');
   createWindow(config.port);
   setupTray(app, mainWindow);
   setupUpdater();
 });
 
-app.on('window-all-closed', (event) => {
+app.on('window-all-closed', () => {
   // Do not quit when all windows are closed; app lives in the tray
 });
 
