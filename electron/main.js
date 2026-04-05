@@ -7,6 +7,7 @@ const http = require('http');
 
 const { setupTray } = require('./tray');
 const { setupUpdater } = require('./updater');
+const { showWizard } = require('./wizard');
 
 // ---------------------------------------------------------------------------
 // Config
@@ -15,7 +16,7 @@ const { setupUpdater } = require('./updater');
 const CONFIG_PATH = path.join(app.getPath('userData'), 'config.json');
 
 function loadConfig() {
-  const defaults = { port: 8080 };
+  const defaults = { port: 8080, setupComplete: false };
   try {
     if (fs.existsSync(CONFIG_PATH)) {
       return { ...defaults, ...JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8')) };
@@ -24,6 +25,14 @@ function loadConfig() {
     console.error('Failed to read config, using defaults:', e.message);
   }
   return defaults;
+}
+
+function saveConfig(config) {
+  try {
+    fs.writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2), 'utf8');
+  } catch (e) {
+    console.error('Failed to save config:', e.message);
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -87,6 +96,7 @@ function startBackend(port, dataDir) {
     `--spring.datasource.url=jdbc:h2:file:${path.join(dataDir, 'moneto')};DB_CLOSE_ON_EXIT=FALSE`,
     `--logging.file.name=${path.join(dataDir, 'logs', 'moneto.log')}`,
     `--app.backup.local-path=${path.join(dataDir, 'backup')}`,
+    ...(config.instanceName ? [`--app.instance-name=${config.instanceName}`] : []),
   ], {
     detached: false,
     windowsHide: true,
@@ -270,11 +280,22 @@ function createWindow(port) {
 // ---------------------------------------------------------------------------
 
 app.whenReady().then(async () => {
-  const config = loadConfig();
+  let config = loadConfig();
   const dataDir = app.getPath('userData');
 
   // Ensure logs directory exists
   fs.mkdirSync(path.join(dataDir, 'logs'), { recursive: true });
+
+  // First run: show setup wizard
+  if (!config.setupComplete) {
+    const result = await showWizard();
+    if (result) {
+      config.port = result.port;
+      config.instanceName = result.instanceName;
+    }
+    config.setupComplete = true;
+    saveConfig(config);
+  }
 
   // Pre-flight: check JAR exists
   const jarPath = getJarPath();
