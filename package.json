@@ -1,7 +1,8 @@
 {
   "name": "moneto",
   "version": "1.0.0",
-  "description": "Moneto - Home Budget Tracker",
+  "description": "Moneto - Il tuo bilancio di casa",
+  "author": "Matteo Casetta",
   "main": "electron/main.js",
   "scripts": {
     "start": "electron .",

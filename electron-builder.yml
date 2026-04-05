@@ -24,13 +24,19 @@ win:
   target:
     - target: nsis
   icon: assets/icon.ico
+  artifactName: "Moneto-Setup-${version}.exe"
 
 nsis:
   oneClick: false
+  perMachine: false                # per-user install, no admin rights required
   allowToChangeInstallationDirectory: false
   createDesktopShortcut: true
   createStartMenuShortcut: true
   shortcutName: Moneto
+  uninstallDisplayName: Moneto
+  deleteAppDataOnUninstall: false  # preserve user data (DB, config, logs) on uninstall
+  installerIcon: assets/icon.ico
+  uninstallerIcon: assets/icon.ico
 
 # Auto-update via GitHub Releases
 publish:
