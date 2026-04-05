@@ -86,6 +86,7 @@ function startBackend(port, dataDir) {
     `--server.port=${port}`,
     `--spring.datasource.url=jdbc:h2:file:${path.join(dataDir, 'moneto')};DB_CLOSE_ON_EXIT=FALSE`,
     `--logging.file.name=${path.join(dataDir, 'logs', 'moneto.log')}`,
+    `--app.backup.local-path=${path.join(dataDir, 'backup')}`,
   ], {
     detached: false,
     windowsHide: true,
