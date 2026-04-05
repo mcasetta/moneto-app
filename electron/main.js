@@ -107,7 +107,13 @@ function startBackend(port, dataDir) {
 
 function stopBackend() {
   if (backendProcess) {
-    backendProcess.kill();
+    if (process.platform === 'win32') {
+      // On Windows, kill() is unreliable for Java processes — use taskkill to
+      // force-terminate the entire process tree so the port is released immediately.
+      spawn('taskkill', ['/pid', String(backendProcess.pid), '/f', '/t'], { windowsHide: true });
+    } else {
+      backendProcess.kill();
+    }
     backendProcess = null;
   }
 }
