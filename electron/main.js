@@ -9,6 +9,11 @@ const { setupTray } = require('./tray');
 const { setupUpdater } = require('./updater');
 const { showWizard } = require('./wizard');
 
+// In dev mode, use a separate data directory to avoid conflicts with the installed app
+if (!app.isPackaged) {
+  app.setPath('userData', path.join(app.getPath('appData'), 'Moneto-dev'));
+}
+
 // ---------------------------------------------------------------------------
 // Config
 // ---------------------------------------------------------------------------
