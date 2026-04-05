@@ -61,6 +61,7 @@ REM --- Create GitHub release (draft) ---
 echo.
 echo Caricamento su GitHub...
 gh release create "v%VERSION%" "%INSTALLER%" "%LATEST_YML%" ^
+    --repo mcasetta/moneto-app ^
     --title "Moneto v%VERSION%" ^
     --draft ^
     --notes "Release Moneto v%VERSION%"
