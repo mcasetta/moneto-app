@@ -26,7 +26,7 @@ if not exist "%RESOURCES_DIR%\jre\bin\java.exe" (
 REM --- Build Spring Boot JAR ---
 echo [1/3] Build Spring Boot JAR...
 cd /d "%BACKEND_DIR%"
-call mvnw.cmd clean package -DskipTests -q
+call mvn clean package -DskipTests -q
 if errorlevel 1 (
     echo [ERRORE] Build Maven fallita.
     pause
