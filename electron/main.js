@@ -96,6 +96,12 @@ function startBackend(port, dataDir) {
   backendProcess.on('exit', (code) => {
     console.log(`Backend exited with code ${code}`);
     backendProcess = null;
+    // If the backend shuts down on its own (e.g. user clicked "Chiudi applicazione"),
+    // quit Electron too — unless we already initiated the quit ourselves.
+    if (!app.isQuitting) {
+      app.isQuitting = true;
+      app.quit();
+    }
   });
 }
 
