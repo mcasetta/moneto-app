@@ -27,7 +27,7 @@ REM --- Build Spring Boot JAR ---
 echo [1/3] Build Spring Boot JAR...
 cd /d "%BACKEND_DIR%"
 set MVN="C:\Program Files\JetBrains\IntelliJ IDEA Community Edition 2025.2.6.1\plugins\maven\lib\maven3\bin\mvn.cmd"
-call %MVN% clean package -DskipTests -q
+call %MVN% clean package -DskipTests -P with-frontend -q
 if errorlevel 1 (
     echo [ERRORE] Build Maven fallita.
     pause
