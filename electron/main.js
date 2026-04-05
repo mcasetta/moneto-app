@@ -2,7 +2,7 @@ const { app, BrowserWindow, shell, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const net = require('net');
-const { spawn } = require('child_process');
+const { spawn, execSync } = require('child_process');
 const http = require('http');
 
 const { setupTray } = require('./tray');
@@ -108,9 +108,14 @@ function startBackend(port, dataDir) {
 function stopBackend() {
   if (backendProcess) {
     if (process.platform === 'win32') {
-      // On Windows, kill() is unreliable for Java processes — use taskkill to
-      // force-terminate the entire process tree so the port is released immediately.
-      spawn('taskkill', ['/pid', String(backendProcess.pid), '/f', '/t'], { windowsHide: true });
+      // On Windows, kill() is unreliable for Java processes. Use execSync so we
+      // block until taskkill has actually terminated the process tree, ensuring
+      // the port is freed before Electron exits.
+      try {
+        execSync(`taskkill /pid ${backendProcess.pid} /f /t`, { windowsHide: true });
+      } catch (e) {
+        // Process may have already exited on its own
+      }
     } else {
       backendProcess.kill();
     }
