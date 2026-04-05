@@ -89,7 +89,7 @@ function checkPortAvailable(port) {
 
 let backendProcess = null;
 
-function startBackend(port, dataDir) {
+function startBackend(port, dataDir, instanceName) {
   const javaExe = getJavaExecutable();
   const jarPath = getJarPath();
 
@@ -101,7 +101,7 @@ function startBackend(port, dataDir) {
     `--spring.datasource.url=jdbc:h2:file:${path.join(dataDir, 'moneto')};DB_CLOSE_ON_EXIT=FALSE`,
     `--logging.file.name=${path.join(dataDir, 'logs', 'moneto.log')}`,
     `--app.backup.local-path=${path.join(dataDir, 'backup')}`,
-    ...(config.instanceName ? [`--app.instance-name=${config.instanceName}`] : []),
+    ...(instanceName ? [`--app.instance-name=${instanceName}`] : []),
   ], {
     detached: false,
     windowsHide: true,
@@ -327,7 +327,7 @@ app.whenReady().then(async () => {
   createSplashWindow();
   setSplashStatus('Avvio backend in corso...');
 
-  startBackend(config.port, dataDir);
+  startBackend(config.port, dataDir, config.instanceName);
 
   try {
     await waitForBackend(config.port, 60000, setSplashStatus);
