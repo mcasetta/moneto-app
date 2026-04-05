@@ -52,6 +52,8 @@ echo       OK
 REM --- Build Electron installer ---
 echo [3/3] Build installer Electron...
 cd /d "%SCRIPT_DIR%"
+REM Disable code signing (no certificate available - avoids winCodeSign symlink error on Windows)
+set CSC_IDENTITY_AUTO_DISCOVERY=false
 call npm run build
 if errorlevel 1 (
     echo [ERRORE] Build Electron fallita.
