@@ -28,8 +28,8 @@ win:
 
 nsis:
   oneClick: false
-  perMachine: false                # per-user install, no admin rights required
-  allowToChangeInstallationDirectory: false
+  perMachine: true                 # install to C:\Program Files, requires UAC elevation
+  allowToChangeInstallationDirectory: true
   createDesktopShortcut: true
   createStartMenuShortcut: true
   shortcutName: Moneto
