@@ -16,7 +16,9 @@ if errorlevel 1 (
 )
 
 REM --- Get version from package.json ---
-for /f %%i in ('powershell -NoProfile -Command "(Get-Content package.json | ConvertFrom-Json).version"') do set VERSION=%%i
+powershell -NoProfile -Command "(Get-Content '%~dp0package.json' | ConvertFrom-Json).version" > "%TEMP%\moneto_version.txt"
+set /p VERSION=<"%TEMP%\moneto_version.txt"
+del "%TEMP%\moneto_version.txt" >nul 2>&1
 if "%VERSION%"=="" (
     echo [ERRORE] Versione non trovata in package.json.
     pause
