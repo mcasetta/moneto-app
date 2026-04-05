@@ -6,6 +6,9 @@ echo  Moneto - Crea GitHub Release
 echo ============================================================
 echo.
 
+REM --- Ensure Git is in PATH (needed by gh CLI) ---
+set PATH=C:\Program Files\Git\cmd;%PATH%
+
 REM --- Check gh CLI ---
 where gh >nul 2>&1
 if errorlevel 1 (
