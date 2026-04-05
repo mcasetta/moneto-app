@@ -4,6 +4,7 @@ const { dialog, app } = require('electron');
 function setupUpdater() {
   autoUpdater.autoDownload = false;
   autoUpdater.autoInstallOnAppQuit = false;
+  autoUpdater.logger = null; // electron-updater logs via its own logger; suppress to avoid noise
 
   autoUpdater.on('update-available', (info) => {
     dialog.showMessageBox({
@@ -13,6 +14,7 @@ function setupUpdater() {
       detail: 'L\'app verrà aggiornata e riavviata.',
       buttons: ['Aggiorna', 'Più tardi'],
       defaultId: 0,
+      cancelId: 1,
     }).then(({ response }) => {
       if (response === 0) {
         autoUpdater.downloadUpdate();
@@ -20,18 +22,9 @@ function setupUpdater() {
     });
   });
 
-  autoUpdater.on('update-not-available', (info, explicit) => {
-    if (explicit) {
-      dialog.showMessageBox({
-        type: 'info',
-        title: 'Nessun aggiornamento',
-        message: 'Stai usando l\'ultima versione di Moneto.',
-      });
-    }
-  });
-
   autoUpdater.on('download-progress', (progress) => {
-    console.log(`Download: ${Math.round(progress.percent)}%`);
+    const pct = Math.round(progress.percent);
+    console.log(`Update download: ${pct}%`);
   });
 
   autoUpdater.on('update-downloaded', () => {
@@ -46,25 +39,32 @@ function setupUpdater() {
   });
 
   autoUpdater.on('error', (err) => {
-    console.error('Update error:', err.message);
+    // Silently log errors on startup check — network may be unavailable
+    console.error('Auto-update error:', err.message);
   });
 
-  // Check silently on startup
-  autoUpdater.checkForUpdates();
+  // Check silently on startup (errors are suppressed above)
+  autoUpdater.checkForUpdates().catch(() => {});
 }
 
-// Called explicitly (e.g. from tray menu "Controlla aggiornamenti")
-function checkForUpdates(explicit = false) {
-  if (explicit) {
-    autoUpdater.once('update-not-available', () => {
-      dialog.showMessageBox({
-        type: 'info',
-        title: 'Nessun aggiornamento',
-        message: 'Stai usando l\'ultima versione di Moneto.',
-      });
+// Called explicitly from tray menu "Controlla aggiornamenti"
+function checkForUpdates() {
+  autoUpdater.once('update-not-available', () => {
+    dialog.showMessageBox({
+      type: 'info',
+      title: 'Nessun aggiornamento',
+      message: `Stai usando l\'ultima versione di Moneto (${app.getVersion()}).`,
     });
-  }
-  autoUpdater.checkForUpdates();
+  });
+
+  autoUpdater.once('error', (err) => {
+    dialog.showErrorBox(
+      'Errore verifica aggiornamenti',
+      `Impossibile controllare gli aggiornamenti.\n\n${err.message}`
+    );
+  });
+
+  autoUpdater.checkForUpdates().catch(() => {});
 }
 
 module.exports = { setupUpdater, checkForUpdates };
