@@ -7,7 +7,7 @@ echo ============================================================
 echo.
 
 REM --- Ensure Git is in PATH (needed by gh CLI) ---
-set PATH=C:\Program Files\Git\mingw64\bin;C:\Program Files\Git\cmd;%PATH%
+set PATH=%LOCALAPPDATA%\Programs\Git\mingw64\bin;%LOCALAPPDATA%\Programs\Git\cmd;%PATH%
 
 REM --- Check gh CLI ---
 where gh >nul 2>&1
