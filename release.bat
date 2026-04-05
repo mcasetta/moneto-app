@@ -25,8 +25,8 @@ if "%VERSION%"=="" (
     exit /b 1
 )
 
-set INSTALLER=dist\Moneto-Setup-%VERSION%.exe
-set LATEST_YML=dist\latest.yml
+set INSTALLER=%~dp0dist\Moneto-Setup-%VERSION%.exe
+set LATEST_YML=%~dp0dist\latest.yml
 
 REM --- Check installer exists ---
 if not exist "%INSTALLER%" (
