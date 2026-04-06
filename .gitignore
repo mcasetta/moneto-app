@@ -1,5 +1,8 @@
 node_modules/
 dist/
+come-installare.txt
+backup/
+logs/
 
 # Bundled JRE and JAR (large binaries, not committed - added at build time)
 resources/jre/

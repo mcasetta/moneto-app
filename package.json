@@ -1,6 +1,6 @@
 {
   "name": "moneto",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Moneto - Il tuo bilancio di casa",
   "author": "Matteo Casetta",
   "main": "electron/main.js",
