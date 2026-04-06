@@ -30,6 +30,19 @@ REM --- Paths ---
 set SCRIPT_DIR=%~dp0
 set BACKEND_DIR=%SCRIPT_DIR%..\home-budget-tracker\backend
 set RESOURCES_DIR=%SCRIPT_DIR%resources
+set VERSION_FILE=%SCRIPT_DIR%..\home-budget-tracker\VERSION
+
+REM --- Sync version from home-budget-tracker/VERSION to package.json ---
+if not exist "%VERSION_FILE%" (
+    echo [ERRORE] VERSION file non trovato: %VERSION_FILE%
+    exit /b 1
+)
+set /p APP_VERSION=<"%VERSION_FILE%"
+set APP_VERSION=%APP_VERSION: =%
+echo [0/3] Sincronizzazione versione: %APP_VERSION%
+powershell -NoProfile -Command ^
+    "$pkg = Get-Content '%SCRIPT_DIR%package.json' | ConvertFrom-Json; $pkg.version = '%APP_VERSION%'; $pkg | ConvertTo-Json -Depth 10 | Set-Content '%SCRIPT_DIR%package.json'"
+echo       OK
 
 REM --- Check JRE is present ---
 if not exist "%RESOURCES_DIR%\jre\bin\java.exe" (
